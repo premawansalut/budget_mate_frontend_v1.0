@@ -132,7 +132,7 @@ class _IncomeScreenState extends State<IncomeScreen> {
     );
   }
 
-  // ✅ Updated Save Function with animated success popup + redirect to Home
+  // updated Save Function
   Future<void> _save() async {
     final amountText = _amountController.text.trim();
     final amount = double.tryParse(amountText) ?? 0.0;
@@ -168,16 +168,14 @@ class _IncomeScreenState extends State<IncomeScreen> {
       setState(() => _isSaving = false);
 
       if (res == true) {
-        // 🔹 Animated popup
+        // keep your success popup animation same
         await showGeneralDialog(
           context: context,
           barrierDismissible: false,
           barrierLabel: 'Success',
           barrierColor: Colors.black54,
           transitionDuration: const Duration(milliseconds: 400),
-          pageBuilder: (context, anim1, anim2) {
-            return const SizedBox.shrink();
-          },
+          pageBuilder: (context, anim1, anim2) => const SizedBox.shrink(),
           transitionBuilder: (context, anim, _, __) {
             return Transform.scale(
               scale: Curves.easeOutBack.transform(anim.value),
@@ -210,7 +208,7 @@ class _IncomeScreenState extends State<IncomeScreen> {
                           backgroundColor: Colors.greenAccent,
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12)),
-                          padding: const EdgeInsets.symmetric(
+                          padding: EdgeInsets.symmetric(
                               horizontal: 40, vertical: 12),
                         ),
                         onPressed: () {
@@ -226,7 +224,7 @@ class _IncomeScreenState extends State<IncomeScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    SizedBox(height: 10),
                   ],
                 ),
               ),
@@ -248,6 +246,7 @@ class _IncomeScreenState extends State<IncomeScreen> {
       }
     }
   }
+
 
   @override
   Widget build(BuildContext context) {

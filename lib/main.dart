@@ -1,10 +1,6 @@
-import 'package:budget_mate_frontend_v1/screens/home_screen.dart';
-import 'package:budget_mate_frontend_v1/screens/settings_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'providers/settings_provider.dart';
-import 'screens/income_screen.dart';
 import 'screens/main_wrapper.dart';
 
 void main() async {
@@ -13,8 +9,8 @@ void main() async {
   await settingsProvider.loadSettings();
 
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => settingsProvider,
+    ChangeNotifierProvider.value(
+      value: settingsProvider,
       child: const BudgetMateApp(),
     ),
   );
@@ -29,39 +25,23 @@ class BudgetMateApp extends StatelessWidget {
     final darkPrimary = const Color(0xFF1B1D2B);
     final accent = const Color(0xFF8B5CF6);
 
-    final darkTheme = ThemeData(
-      brightness: Brightness.dark,
-      scaffoldBackgroundColor: darkPrimary,
-      textTheme: GoogleFonts.poppinsTextTheme(ThemeData.dark().textTheme),
-      colorScheme: ColorScheme.fromSwatch(
-        brightness: Brightness.dark,
-        accentColor: accent,
-      ),
-    );
-
-    final lightTheme = ThemeData(
-      brightness: Brightness.light,
-      scaffoldBackgroundColor: Colors.white,
-      textTheme: GoogleFonts.poppinsTextTheme(ThemeData.light().textTheme),
-      colorScheme: ColorScheme.fromSwatch(
-        brightness: Brightness.light,
-        accentColor: accent,
-      ),
-    );
-
-
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Budget Mate',
       themeMode: settings.themeMode,
-      theme: lightTheme,
-      darkTheme: darkTheme,
-      initialRoute: '/',
-      routes: {
-        '/': (_) => const MainWrapper(),
-        '/income': (_) => const IncomeScreen(),
-        '/settings': (_) => const SettingsScreen(),
-      },
+      theme: ThemeData(
+        brightness: Brightness.light,
+        primaryColor: accent,
+        colorScheme:
+        ColorScheme.fromSwatch(accentColor: accent, brightness: Brightness.light),
+      ),
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: darkPrimary,
+        colorScheme: ColorScheme.fromSwatch(
+            accentColor: accent, brightness: Brightness.dark),
+      ),
+      home: const MainWrapper(),
     );
   }
 }

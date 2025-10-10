@@ -10,37 +10,63 @@ class ApiService {
   static String get BASE_URL {
     if (USE_LOCAL_DEVICE) {
       //  Physical Android device
-      return 'http://192.168.23.78:3500/api';
+      return 'http://192.168.23.78:3600/api';
     } else {
       //  Android emulator
-      return 'http://10.0.2.2:3500/api';
+      return 'http://10.0.2.2:3700/api';
     }
   }
 
 
   // Fetch balance for a given year and month
 
-  static Future<double?> getBalance(int year, int month) async {
-    try {
-      final uri = Uri.parse('$BASE_URL/balance?year=$year&month=$month');
-      final resp = await http.get(uri);
+  // static Future<double?> getBalance(int year, int month) async {
+  //   try {
+  //     final uri = Uri.parse('$BASE_URL/balance?year=$year&month=$month');
+  //     final resp = await http.get(uri);
+  //
+  //     if (resp.statusCode == 200) {
+  //       final data = jsonDecode(resp.body);
+  //       if (data['total_balance'] != null) {
+  //         return (data['total_balance'] as num).toDouble();
+  //       } else {
+  //         return 0.0;
+  //       }
+  //     } else if (resp.statusCode == 404) {
+  //       // No data for that month
+  //       return 0.0;
+  //     } else {
+  //       print('⚠️ Error fetching balance: ${resp.statusCode} - ${resp.body}');
+  //       return 0.0;
+  //     }
+  //   } catch (e) {
+  //     print('❌ Exception fetching balance: $e');
+  //     return 0.0;
+  //   }
+  // }
 
-      if (resp.statusCode == 200) {
-        final data = jsonDecode(resp.body);
-        if (data['total_balance'] != null) {
-          return (data['total_balance'] as num).toDouble();
-        } else {
-          return 0.0;
+
+  static Future<double?> getBalance(int year, int month) async {
+    final uri = Uri.parse('$BASE_URL/balance?year=$year&month=$month');
+
+    try {
+      final response = await http.get(uri, headers: {
+        'Content-Type': 'application/json',
+      });
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        print('Balance response: $data');
+        if (data is Map && data.containsKey('total_balance')) {
+          return (data['total_balance'] as num?)?.toDouble() ?? 0.0;
         }
-      } else if (resp.statusCode == 404) {
-        // No data for that month
         return 0.0;
       } else {
-        print('⚠️ Error fetching balance: ${resp.statusCode} - ${resp.body}');
+        print('Balance API failed: ${response.statusCode}');
         return 0.0;
       }
     } catch (e) {
-      print('❌ Exception fetching balance: $e');
+      print('Error fetching balance: $e');
       return 0.0;
     }
   }
@@ -48,24 +74,70 @@ class ApiService {
 
   // POST /incomes  (Add new income)
 
+  // static Future<bool> createIncome(Income income) async {
+  //   final uri = Uri.parse('$BASE_URL/incomes');
+  //   final headers = {'Content-Type': 'application/json'};
+  //
+  //   // send only fields accepted by backend
+  //   final body = jsonEncode({
+  //     'amount': income.amount,
+  //     'category': income.category,
+  //   });
+  //
+  //   try {
+  //     final resp = await http.post(uri, headers: headers, body: body);
+  //     debugPrint('POST /incomes → ${resp.statusCode} ${resp.body}');
+  //     if (resp.statusCode == 200 || resp.statusCode == 201) return true;
+  //     return false;
+  //   } catch (e, st) {
+  //     debugPrint('createIncome error: $e\n$st');
+  //     return false;
+  //   }
+  // }
+
   static Future<bool> createIncome(Income income) async {
-    final uri = Uri.parse('$BASE_URL/incomes');
-    final headers = {'Content-Type': 'application/json'};
-
-    // send only fields accepted by backend
-    final body = jsonEncode({
-      'amount': income.amount,
-      'category': income.category,
-    });
-
     try {
+      final uri = Uri.parse('$BASE_URL/incomes');
+      final body = jsonEncode({
+        'amount': income.amount,
+        'category': income.category,
+        'year': DateTime.parse(income.timestamp).year,
+        'month': DateTime.parse(income.timestamp).month,
+      });
+
+      final headers = {'Content-Type': 'application/json'};
+
       final resp = await http.post(uri, headers: headers, body: body);
-      debugPrint('POST /incomes → ${resp.statusCode} ${resp.body}');
-      if (resp.statusCode == 200 || resp.statusCode == 201) return true;
-      return false;
-    } catch (e, st) {
-      debugPrint('createIncome error: $e\n$st');
+
+      if (resp.statusCode == 200 || resp.statusCode == 201) {
+        print('Income added: ${resp.body}');
+        return true;
+      } else {
+        print('Failed to add income: ${resp.statusCode} - ${resp.body}');
+        return false;
+      }
+    } catch (e) {
+      print('Error adding income: $e');
       return false;
     }
   }
+
+
+  //statisctics (get)
+  static Future<Map<String, dynamic>> getStatistics(int year, int month) async {
+    final url = Uri.parse('$BASE_URL/incomes/statistics?year=$year&month=$month');
+    final response = await http.get(url, headers: {'Content-Type': 'application/json'});
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load statistics: ${response.statusCode}');
+    }
+
+    final body = jsonDecode(response.body);
+    print('📊 Backend response: $body');
+    return body is Map<String, dynamic> ? body : {};
+  }
+
+
+
+
 }

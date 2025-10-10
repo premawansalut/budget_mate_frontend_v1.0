@@ -64,9 +64,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   Text(
                     "Select Month & Year",
                     style: TextStyle(
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold),
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 20),
 
@@ -77,19 +78,18 @@ class _HomeScreenState extends State<HomeScreen> {
                     iconEnabledColor:
                     Theme.of(context).iconTheme.color ?? Colors.white,
                     style: TextStyle(
-                        color:
-                        Theme.of(context).textTheme.bodyLarge?.color ??
-                            Colors.white),
+                      color: Theme.of(context).textTheme.bodyLarge?.color ??
+                          Colors.white,
+                    ),
                     items: List.generate(12, (index) {
                       return DropdownMenuItem(
                         value: index + 1,
-                        child: Text(
-                            DateFormat.MMMM().format(DateTime(0, index + 1))),
+                        child:
+                        Text(DateFormat.MMMM().format(DateTime(0, index + 1))),
                       );
                     }),
                     onChanged: (value) {
-                      setModalState(() =>
-                      selectedMonth = value ?? selectedMonth);
+                      setModalState(() => selectedMonth = value ?? selectedMonth);
                     },
                   ),
                   const SizedBox(height: 10),
@@ -101,9 +101,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     iconEnabledColor:
                     Theme.of(context).iconTheme.color ?? Colors.white,
                     style: TextStyle(
-                        color:
-                        Theme.of(context).textTheme.bodyLarge?.color ??
-                            Colors.white),
+                      color: Theme.of(context).textTheme.bodyLarge?.color ??
+                          Colors.white,
+                    ),
                     items: List.generate(10, (index) {
                       final year = DateTime.now().year - 5 + index;
                       return DropdownMenuItem(
@@ -112,19 +112,20 @@ class _HomeScreenState extends State<HomeScreen> {
                       );
                     }),
                     onChanged: (value) {
-                      setModalState(() =>
-                      selectedYear = value ?? selectedYear);
+                      setModalState(() => selectedYear = value ?? selectedYear);
                     },
                   ),
                   const Spacer(),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                      Theme.of(context).colorScheme.secondary,
+                      backgroundColor: Theme.of(context).colorScheme.secondary,
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 40, vertical: 14),
+                        horizontal: 40,
+                        vertical: 14,
+                      ),
                     ),
                     onPressed: () {
                       setState(() {
@@ -133,9 +134,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       Navigator.pop(context);
                       fetchBalance();
                     },
-                    child: const Text("Apply",
-                        style:
-                        TextStyle(fontSize: 16, color: Colors.white)),
+                    child: const Text(
+                      "Apply",
+                      style: TextStyle(fontSize: 16, color: Colors.white),
+                    ),
                   ),
                   const SizedBox(height: 20),
                 ],
@@ -151,12 +153,13 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final settingsProvider = Provider.of<SettingsProvider>(context);
     final currencySymbol = settingsProvider.currency;
-    final formattedMonthYear =
-    DateFormat('MMMM yyyy').format(selectedDate);
-    final textColor =
-        Theme.of(context).textTheme.bodyLarge?.color ?? Colors.white;
+    final formattedMonthYear = DateFormat('MMMM yyyy').format(selectedDate);
+    final textColor = Theme.of(context).textTheme.bodyLarge?.color ?? Colors.white;
     final cardColor = Theme.of(context).cardColor;
     final accent = Theme.of(context).colorScheme.secondary;
+
+    // ✅ Use NumberFormat with cents
+    final balanceFormatted = NumberFormat('#,##0.00').format(totalBalance ?? 0);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -175,19 +178,17 @@ class _HomeScreenState extends State<HomeScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: ListView(
           children: [
-            // Month selector
+            // Month Selector
             GestureDetector(
               onTap: pickMonthYear,
               child: Container(
-                padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   color: cardColor,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
-                  mainAxisAlignment:
-                  MainAxisAlignment.spaceBetween,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                       formattedMonthYear,
@@ -197,15 +198,14 @@ class _HomeScreenState extends State<HomeScreen> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    Icon(Icons.arrow_forward_ios,
-                        color: textColor, size: 18),
+                    Icon(Icons.arrow_forward_ios, color: textColor, size: 18),
                   ],
                 ),
               ),
             ),
             const SizedBox(height: 20),
 
-            // 🔹 Animated Total Balance Section
+            // 🔹 Animated Balance Section
             Container(
               decoration: BoxDecoration(
                 color: cardColor,
@@ -216,8 +216,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   Expanded(
                     child: Column(
-                      crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         AnimatedSwitcher(
                           duration: const Duration(milliseconds: 400),
@@ -227,13 +226,14 @@ class _HomeScreenState extends State<HomeScreen> {
                             isLoading
                                 ? "Loading..."
                                 : isHidden
-                                ? "$currencySymbol ${'*' * (NumberFormat('#,###').format(totalBalance ?? 0).length)}"
-                                : "$currencySymbol ${NumberFormat('#,###').format(totalBalance ?? 0)}",
+                                ? "$currencySymbol ${'*' * (balanceFormatted.length)}"
+                                : "$currencySymbol $balanceFormatted",
                             key: ValueKey(isHidden),
                             style: TextStyle(
                               color: textColor,
                               fontSize: 26,
                               fontWeight: FontWeight.bold,
+                              letterSpacing: 0.5,
                             ),
                           ),
                         ),
@@ -241,9 +241,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         Text(
                           "Total balance",
                           style: TextStyle(
-                              color:
-                              textColor.withOpacity(0.6),
-                              fontSize: 14),
+                            color: textColor.withOpacity(0.6),
+                            fontSize: 14,
+                          ),
                         ),
                       ],
                     ),
@@ -265,9 +265,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     onPressed: () {
-                      setState(() {
-                        isHidden = !isHidden;
-                      });
+                      setState(() => isHidden = !isHidden);
                     },
                   ),
                 ],
@@ -275,7 +273,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 30),
 
-            // Category buttons
+            // Category Buttons
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -286,7 +284,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 30),
 
-            // Example expenditure
+            // Expenditure Section
             Container(
               decoration: BoxDecoration(
                 color: cardColor,
@@ -294,37 +292,43 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               padding: const EdgeInsets.all(20),
               child: Row(
-                mainAxisAlignment:
-                MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Column(
-                    crossAxisAlignment:
-                    CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text("Total expenditure",
-                          style:
-                          TextStyle(color: textColor.withOpacity(0.6))),
+                      Text(
+                        "Total expenditure",
+                        style: TextStyle(color: textColor.withOpacity(0.6)),
+                      ),
                       const SizedBox(height: 8),
-                      Text("$currencySymbol 200",
-                          style: const TextStyle(
-                              color: Colors.redAccent,
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold)),
+                      Text(
+                        "$currencySymbol 200.00",
+                        style: const TextStyle(
+                          color: Colors.redAccent,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ],
                   ),
-                  Icon(Icons.savings_outlined,
-                      color: textColor, size: 40),
+                  Icon(Icons.savings_outlined, color: textColor, size: 40),
                 ],
               ),
             ),
             const SizedBox(height: 30),
 
-            Text("Sat, 27 September",
-                style: TextStyle(
-                    color: textColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16)),
+            Text(
+              "Sat, 27 September",
+              style: TextStyle(
+                color: textColor,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
             const SizedBox(height: 10),
+
+            // Example Transaction
             Row(
               children: [
                 Container(
@@ -338,24 +342,29 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
-                    crossAxisAlignment:
-                    CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text("Food",
-                          style: TextStyle(
-                              color: textColor,
-                              fontWeight: FontWeight.bold)),
-                      Text("food",
-                          style: TextStyle(
-                              color:
-                              textColor.withOpacity(0.6))),
+                      Text(
+                        "Food",
+                        style: TextStyle(
+                          color: textColor,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        "food",
+                        style: TextStyle(color: textColor.withOpacity(0.6)),
+                      ),
                     ],
                   ),
                 ),
-                Text("-$currencySymbol 200",
-                    style: const TextStyle(
-                        color: Colors.redAccent,
-                        fontWeight: FontWeight.bold)),
+                Text(
+                  "-$currencySymbol 200.00",
+                  style: const TextStyle(
+                    color: Colors.redAccent,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ],
             ),
           ],
@@ -364,20 +373,21 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildCategoryButton(
-      String label, bool selected, Color accent) {
+  Widget _buildCategoryButton(String label, bool selected, Color accent) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-          horizontal: 20, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       decoration: BoxDecoration(
-        color:
-        selected ? accent : Theme.of(context).cardColor.withOpacity(0.5),
+        color: selected
+            ? accent
+            : Theme.of(context).cardColor.withOpacity(0.5),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
         label,
         style: const TextStyle(
-            color: Colors.white, fontWeight: FontWeight.bold),
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }
