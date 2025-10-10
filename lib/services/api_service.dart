@@ -19,33 +19,6 @@ class ApiService {
 
 
   // Fetch balance for a given year and month
-
-  // static Future<double?> getBalance(int year, int month) async {
-  //   try {
-  //     final uri = Uri.parse('$BASE_URL/balance?year=$year&month=$month');
-  //     final resp = await http.get(uri);
-  //
-  //     if (resp.statusCode == 200) {
-  //       final data = jsonDecode(resp.body);
-  //       if (data['total_balance'] != null) {
-  //         return (data['total_balance'] as num).toDouble();
-  //       } else {
-  //         return 0.0;
-  //       }
-  //     } else if (resp.statusCode == 404) {
-  //       // No data for that month
-  //       return 0.0;
-  //     } else {
-  //       print('⚠️ Error fetching balance: ${resp.statusCode} - ${resp.body}');
-  //       return 0.0;
-  //     }
-  //   } catch (e) {
-  //     print('❌ Exception fetching balance: $e');
-  //     return 0.0;
-  //   }
-  // }
-
-
   static Future<double?> getBalance(int year, int month) async {
     final uri = Uri.parse('$BASE_URL/balance?year=$year&month=$month');
 
@@ -133,7 +106,7 @@ class ApiService {
     }
 
     final body = jsonDecode(response.body);
-    print('📊 Backend response: $body');
+    print('Backend response: $body');
     return body is Map<String, dynamic> ? body : {};
   }
 

@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:provider/provider.dart';
-
-// ✅ Make sure these imports exist and point to correct files
 import '../providers/settings_provider.dart';
-
 import 'home_screen.dart';
 import 'income_screen.dart';
 import 'settings_screen.dart';
-import 'statistics_screen.dart';  // add if you have a separate statistics screen file
-  // optional, if created separately
+import 'statistics_screen.dart';
 
 class MainWrapper extends StatefulWidget {
   const MainWrapper({super.key});
@@ -21,7 +17,6 @@ class MainWrapper extends StatefulWidget {
 class _MainWrapperState extends State<MainWrapper> {
   int _selectedIndex = 0;
 
-  // ✅ Ensure all your screens are properly imported above
   final List<Widget> _screens = const [
 
     HomeScreen(),
@@ -43,7 +38,6 @@ class _MainWrapperState extends State<MainWrapper> {
         child: _screens[_selectedIndex],
       ),
 
-      // ✅ Bottom Navigation Bar
       bottomNavigationBar: ClipRRect(
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(22),
