@@ -5,12 +5,12 @@ import '../models/income.dart';
 
 class ApiService {
 
-  static const bool USE_LOCAL_DEVICE = false; // change to false  using emulator
+  static const bool USE_LOCAL_DEVICE = true; // change to false  using emulator
 
   static String get BASE_URL {
     if (USE_LOCAL_DEVICE) {
       //  Physical Android device
-      return 'http://192.168.23.78:3600/api';
+      return 'http://192.168.23.78:3700/api';
     } else {
       //  Android emulator
       return 'http://10.0.2.2:3700/api';

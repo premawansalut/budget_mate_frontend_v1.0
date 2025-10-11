@@ -77,7 +77,7 @@ class _MainWrapperState extends State<MainWrapper> {
                   GButton(icon: Icons.home, text: 'Home'),
                   GButton(icon: Icons.bar_chart_rounded, text: 'Statistics'),
                   GButton(icon: Icons.add_circle_outline, text: 'Income'),
-                  GButton(icon: Icons.account_balance_wallet_rounded, text: 'Budget'),
+                 // GButton(icon: Icons.account_balance_wallet_rounded, text: 'Budget'),
                   GButton(icon: Icons.settings, text: 'Settings'),
                 ],
                 selectedIndex: _selectedIndex,
