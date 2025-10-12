@@ -14,136 +14,122 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   DateTime selectedDate = DateTime.now();
   double? totalBalance;
+  double? totalExpenses;
   bool isLoading = false;
   bool isHidden = false;
 
   @override
   void initState() {
     super.initState();
-    fetchBalance();
+    fetchData();
   }
 
-  Future<void> fetchBalance() async {
+  Future<void> fetchData() async {
     setState(() => isLoading = true);
     final year = selectedDate.year;
     final month = selectedDate.month;
-    final balance = await ApiService.getBalance(year, month);
-    setState(() {
-      totalBalance = balance ?? 0.0;
-      isLoading = false;
-    });
+
+    try {
+      final balance = await ApiService.getBalance(year, month);
+      final expenses = await ApiService.getTotalExpenses(year, month);
+      setState(() {
+        totalBalance = balance ?? 0.0;
+        totalExpenses = expenses ?? 0.0;
+        isLoading = false;
+      });
+    } catch (e) {
+      debugPrint("Error fetching data: $e");
+      setState(() => isLoading = false);
+    }
   }
 
+  // ✅ Modern Month-Year Picker
   Future<void> pickMonthYear() async {
-    int selectedYear = selectedDate.year;
-    int selectedMonth = selectedDate.month;
+    int tempMonth = selectedDate.month;
+    int tempYear = selectedDate.year;
 
-    await showModalBottomSheet(
+    await showDialog(
       context: context,
-      backgroundColor: Theme.of(context).cardColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return SizedBox(
-              height: 350,
-              child: Column(
-                children: [
-                  const SizedBox(height: 10),
-                  Container(
-                    height: 4,
-                    width: 40,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[700],
-                      borderRadius: BorderRadius.circular(20),
-                    ),
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          backgroundColor:
+          isDark ? const Color(0xFF1E1E2A) : Colors.grey.shade100,
+          title: const Text(
+            "Select Month & Year",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          ),
+          content: SizedBox(
+            height: 160,
+            child: Column(
+              children: [
+                // 🔹 Month dropdown
+                DropdownButton<int>(
+                  dropdownColor:
+                  isDark ? const Color(0xFF1E1E2A) : Colors.white,
+                  value: tempMonth,
+                  isExpanded: true,
+                  style: TextStyle(
+                    color: isDark ? Colors.white : Colors.black,
+                    fontSize: 16,
                   ),
-                  const SizedBox(height: 20),
-                  Text(
-                    "Select Month & Year",
-                    style: TextStyle(
-                      color: Theme.of(context).textTheme.bodyLarge?.color,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Month Picker
-                  DropdownButton<int>(
-                    dropdownColor: Theme.of(context).cardColor,
-                    value: selectedMonth,
-                    iconEnabledColor:
-                    Theme.of(context).iconTheme.color ?? Colors.white,
-                    style: TextStyle(
-                      color: Theme.of(context).textTheme.bodyLarge?.color ??
-                          Colors.white,
-                    ),
-                    items: List.generate(12, (index) {
-                      return DropdownMenuItem(
-                        value: index + 1,
-                        child:
-                        Text(DateFormat.MMMM().format(DateTime(0, index + 1))),
-                      );
-                    }),
-                    onChanged: (value) {
-                      setModalState(() => selectedMonth = value ?? selectedMonth);
-                    },
-                  ),
-                  const SizedBox(height: 10),
-
-                  // Year Picker
-                  DropdownButton<int>(
-                    dropdownColor: Theme.of(context).cardColor,
-                    value: selectedYear,
-                    iconEnabledColor:
-                    Theme.of(context).iconTheme.color ?? Colors.white,
-                    style: TextStyle(
-                      color: Theme.of(context).textTheme.bodyLarge?.color ??
-                          Colors.white,
-                    ),
-                    items: List.generate(10, (index) {
-                      final year = DateTime.now().year - 5 + index;
-                      return DropdownMenuItem(
-                        value: year,
-                        child: Text(year.toString()),
-                      );
-                    }),
-                    onChanged: (value) {
-                      setModalState(() => selectedYear = value ?? selectedYear);
-                    },
-                  ),
-                  const Spacer(),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.secondary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                  items: List.generate(12, (index) {
+                    return DropdownMenuItem(
+                      value: index + 1,
+                      child: Text(
+                        DateFormat.MMMM().format(DateTime(0, index + 1)),
                       ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 40,
-                        vertical: 14,
-                      ),
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        selectedDate = DateTime(selectedYear, selectedMonth);
-                      });
-                      Navigator.pop(context);
-                      fetchBalance();
-                    },
-                    child: const Text(
-                      "Apply",
-                      style: TextStyle(fontSize: 16, color: Colors.white),
-                    ),
+                    );
+                  }),
+                  onChanged: (value) =>
+                      setState(() => tempMonth = value ?? tempMonth),
+                ),
+                const SizedBox(height: 10),
+                // 🔹 Year dropdown
+                DropdownButton<int>(
+                  dropdownColor:
+                  isDark ? const Color(0xFF1E1E2A) : Colors.white,
+                  value: tempYear,
+                  isExpanded: true,
+                  style: TextStyle(
+                    color: isDark ? Colors.white : Colors.black,
+                    fontSize: 16,
                   ),
-                  const SizedBox(height: 20),
-                ],
+                  items: List.generate(10, (index) {
+                    final year = DateTime.now().year - 5 + index;
+                    return DropdownMenuItem(
+                      value: year,
+                      child: Text(year.toString()),
+                    );
+                  }),
+                  onChanged: (value) =>
+                      setState(() => tempYear = value ?? tempYear),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.secondary,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
               ),
-            );
-          },
+              onPressed: () {
+                setState(() {
+                  selectedDate = DateTime(tempYear, tempMonth);
+                });
+                Navigator.pop(context);
+                fetchData();
+              },
+              child: const Text("Apply"),
+            ),
+          ],
         );
       },
     );
@@ -154,12 +140,15 @@ class _HomeScreenState extends State<HomeScreen> {
     final settingsProvider = Provider.of<SettingsProvider>(context);
     final currencySymbol = settingsProvider.currency;
     final formattedMonthYear = DateFormat('MMMM yyyy').format(selectedDate);
-    final textColor = Theme.of(context).textTheme.bodyLarge?.color ?? Colors.white;
+    final textColor =
+        Theme.of(context).textTheme.bodyLarge?.color ?? Colors.white;
     final cardColor = Theme.of(context).cardColor;
     final accent = Theme.of(context).colorScheme.secondary;
 
-    // ✅ Use NumberFormat with cents
-    final balanceFormatted = NumberFormat('#,##0.00').format(totalBalance ?? 0);
+    final balanceFormatted =
+    NumberFormat('#,##0.00').format(totalBalance ?? 0);
+    final expenseFormatted =
+    NumberFormat('#,##0.00').format(totalExpenses ?? 0);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -178,11 +167,12 @@ class _HomeScreenState extends State<HomeScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: ListView(
           children: [
-            // Month Selector
+            // ✅ Month Selector
             GestureDetector(
               onTap: pickMonthYear,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   color: cardColor,
                   borderRadius: BorderRadius.circular(12),
@@ -198,7 +188,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    Icon(Icons.arrow_forward_ios, color: textColor, size: 18),
+                    Icon(Icons.calendar_month, color: textColor, size: 20),
                   ],
                 ),
               ),
@@ -284,7 +274,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 30),
 
-            // Expenditure Section
+            // ✅ Total Expenditure Section
             Container(
               decoration: BoxDecoration(
                 color: cardColor,
@@ -303,7 +293,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        "$currencySymbol 200.00",
+                        isLoading
+                            ? "$currencySymbol 0.00"
+                            : "$currencySymbol $expenseFormatted",
                         style: const TextStyle(
                           color: Colors.redAccent,
                           fontSize: 22,
@@ -318,6 +310,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 30),
 
+            // Example transaction
             Text(
               "Sat, 27 September",
               style: TextStyle(
@@ -327,8 +320,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(height: 10),
-
-            // Example Transaction
             Row(
               children: [
                 Container(
@@ -344,17 +335,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        "Food",
-                        style: TextStyle(
-                          color: textColor,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        "food",
-                        style: TextStyle(color: textColor.withOpacity(0.6)),
-                      ),
+                      Text("Food",
+                          style: TextStyle(
+                              color: textColor, fontWeight: FontWeight.bold)),
+                      Text("Lunch",
+                          style:
+                          TextStyle(color: textColor.withOpacity(0.6))),
                     ],
                   ),
                 ),
@@ -377,9 +363,8 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       decoration: BoxDecoration(
-        color: selected
-            ? accent
-            : Theme.of(context).cardColor.withOpacity(0.5),
+        color:
+        selected ? accent : Theme.of(context).cardColor.withOpacity(0.5),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(

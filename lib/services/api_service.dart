@@ -5,7 +5,7 @@ import '../models/income.dart';
 
 class ApiService {
 
-  static const bool USE_LOCAL_DEVICE = true; // change to false  using emulator
+  static const bool USE_LOCAL_DEVICE = false; // change to false  using emulator
 
   static String get BASE_URL {
     if (USE_LOCAL_DEVICE) {
@@ -108,6 +108,40 @@ class ApiService {
     final body = jsonDecode(response.body);
     print('Backend response: $body');
     return body is Map<String, dynamic> ? body : {};
+  }
+
+  // ADD EXPENSE
+  static Future<bool> createExpense(Map<String, dynamic> expenseData) async {
+    final url = Uri.parse('$BASE_URL/expenses');
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(expenseData),
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      print("Expense Added: ${response.body}");
+      return true;
+    } else {
+      print("Expense Error: ${response.statusCode} - ${response.body}");
+      return false;
+    }
+  }
+
+
+  //get expenses for a given year and month
+  static Future<double?> getTotalExpenses(int year, int month) async {
+    final url = Uri.parse('$BASE_URL/expenses/total_expenses?year=$year&month=$month');
+    final response = await http.get(url, headers: {'Content-Type': 'application/json'});
+
+    if (response.statusCode == 200) {
+      final body = jsonDecode(response.body);
+      return (body['total_expense'] != null)
+          ? double.tryParse(body['total_expense'].toString())
+          : 0.0;
+    } else {
+      throw Exception('Failed to load total expenses');
+    }
   }
 
 
