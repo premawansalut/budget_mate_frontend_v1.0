@@ -1,5 +1,7 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
 import 'home_screen.dart';
 import 'statistics_screen.dart';
 import 'income_screen.dart';
@@ -19,20 +21,68 @@ class _MainWrapperState extends State<MainWrapper>
   int _currentIndex = 0;
   bool _isMenuOpen = false;
 
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
   final List<Widget> _screens = const [
     HomeScreen(),
     StatisticsScreen(),
     SettingsScreen(),
   ];
 
-  void _toggleMenu() {
-    setState(() => _isMenuOpen = !_isMenuOpen);
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+    _animation = CurvedAnimation(parent: _controller, curve: Curves.easeOutBack);
   }
 
-  void _navigateTo(Widget page) {
-    Navigator.push(context, MaterialPageRoute(builder: (_) => page)).then((_) {
-      setState(() => _isMenuOpen = false);
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _toggleMenu() {
+    setState(() {
+      _isMenuOpen = !_isMenuOpen;
+      if (_isMenuOpen) {
+        _controller.forward();
+      } else {
+        _controller.reverse();
+      }
     });
+  }
+
+  void _safeNavigate(Widget page) async {
+    setState(() => _isMenuOpen = false);
+    _controller.reverse();
+    await Future.delayed(const Duration(milliseconds: 150));
+    if (!mounted) return;
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
+  }
+
+  Widget _buildNavIcon(IconData icon, int index, Color accent) {
+    final isSelected = _currentIndex == index;
+    return GestureDetector(
+      onTap: () => setState(() {
+        _currentIndex = index;
+        _isMenuOpen = false;
+        _controller.reverse();
+      }),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: isSelected ? accent.withOpacity(0.15) : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(icon, size: 26, color: isSelected ? accent : Colors.grey),
+      ),
+    );
   }
 
   Widget _buildOptionButton({
@@ -43,33 +93,123 @@ class _MainWrapperState extends State<MainWrapper>
   }) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 14),
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.9),
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: [
-            BoxShadow(
-              color: color.withOpacity(0.4),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: Colors.white, size: 18),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: const TextStyle(
+      child: AnimatedScale(
+        scale: _isMenuOpen ? 1 : 0,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeOutBack,
+        child: Container(
+          margin: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(22),
+            boxShadow: [
+              BoxShadow(
+                color: color.withOpacity(0.45),
+                blurRadius: 18,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: Colors.white, size: 26),
+              const SizedBox(width: 14),
+              Text(
+                label,
+                style: const TextStyle(
                   color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14),
-            ),
-          ],
+                  fontWeight: FontWeight.w700,
+                  fontSize: 18,
+                  letterSpacing: .3,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 🧩 Fixed stacked popup (hit areas aligned correctly)
+  Widget _buildAnimatedStackMenu(Color accent) {
+    final width = MediaQuery.of(context).size.width;
+    final centerX = width / 2;
+
+    return Positioned(
+      bottom: 120,
+      left: centerX - 100,
+      child: IgnorePointer(
+        ignoring: !_isMenuOpen,
+        child: AnimatedBuilder(
+          animation: _animation,
+          builder: (context, child) {
+            final value = _animation.value.clamp(0.0, 1.0);
+            return Opacity(
+              opacity: value,
+              child: Transform.scale(
+                scale: value,
+                child: SizedBox(
+                  width: 200,
+                  height: 240,
+                  child: Stack(
+                    alignment: Alignment.bottomCenter,
+                    clipBehavior: Clip.none,
+                    children: [
+                      // Loan (lowest)
+                      Positioned(
+                        bottom: 0,
+                        child: _buildOptionButton(
+                          color: Colors.blue.shade700,
+                          icon: FontAwesomeIcons.handHoldingDollar,
+                          label: 'Loan',
+                          onTap: () => _safeNavigate(const LoanScreen()),
+                        ),
+                      ),
+                      // Expense (middle)
+                      Positioned(
+                        bottom: 80 * value,
+                        child: _buildOptionButton(
+                          color: Colors.orange.shade700,
+                          icon: FontAwesomeIcons.fileInvoiceDollar,
+                          label: 'Expense',
+                          onTap: () => _safeNavigate(const ExpenseScreen()),
+                        ),
+                      ),
+                      // Income (top) ✅ hitbox aligned
+                      Positioned(
+                        bottom: 160 * value,
+                        child: _buildOptionButton(
+                          color: Colors.green.shade600,
+                          icon: FontAwesomeIcons.coins,
+                          label: 'Income',
+                          onTap: () => _safeNavigate(const IncomeScreen()),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  // 🌫️ Blur overlay
+  Widget _buildBlurOverlay() {
+    return Positioned.fill(
+      child: GestureDetector(
+        onTap: _toggleMenu,
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 250),
+          opacity: _isMenuOpen ? 1 : 0,
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: Container(color: Colors.black.withOpacity(0.25)),
+          ),
         ),
       ),
     );
@@ -84,76 +224,14 @@ class _MainWrapperState extends State<MainWrapper>
       body: Stack(
         children: [
           _screens[_currentIndex],
-
-          // Dim background overlay when menu open
-          if (_isMenuOpen)
-            GestureDetector(
-              onTap: _toggleMenu,
-              child: Container(
-                color: Colors.black54,
-                width: double.infinity,
-                height: double.infinity,
-              ),
-            ),
-
-          // Floating popup menu
-          // Floating circular popup menu
-          // Curved circular popup menu (no black background)
-          Positioned(
-            bottom: 100,
-            left: MediaQuery.of(context).size.width / 2 - 30,
-            child: AnimatedScale(
-              scale: _isMenuOpen ? 1 : 0,
-              duration: const Duration(milliseconds: 350),
-              curve: Curves.easeOutBack,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  // Top center - Income
-                  Transform.translate(
-                    offset: const Offset(0, -85),
-                    child: _buildOptionButton(
-                      color: Colors.greenAccent.shade400,
-                      icon: FontAwesomeIcons.coins,
-                      label: 'Income',
-                      onTap: () => _navigateTo(const IncomeScreen()),
-                    ),
-                  ),
-
-                  // Left upper diagonal - Expense
-                  Transform.translate(
-                    offset: const Offset(-75, -25),
-                    child: _buildOptionButton(
-                      color: Colors.orangeAccent.shade400,
-                      icon: FontAwesomeIcons.fileInvoiceDollar,
-                      label: 'Expense',
-                      onTap: () => _navigateTo(const ExpenseScreen()),
-                    ),
-                  ),
-
-                  // Right upper diagonal - Loan
-                  Transform.translate(
-                    offset: const Offset(75, -25),
-                    child: _buildOptionButton(
-                      color: Colors.blueAccent.shade400,
-                      icon: FontAwesomeIcons.handHoldingDollar,
-                      label: 'Loan',
-                      onTap: () => _navigateTo(const LoanScreen()),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
+          if (_isMenuOpen) _buildBlurOverlay(),
+          _buildAnimatedStackMenu(accent),
         ],
       ),
-
-      // ✅ Bottom Navigation Bar (with inline + button)
       bottomNavigationBar: SafeArea(
         top: false,
         child: Container(
-          height: 70,
+          height: 75,
           decoration: BoxDecoration(
             color: Theme.of(context).cardColor,
             borderRadius: const BorderRadius.only(
@@ -173,59 +251,32 @@ class _MainWrapperState extends State<MainWrapper>
             children: [
               _buildNavIcon(Icons.home_filled, 0, accent),
               _buildNavIcon(Icons.bar_chart_rounded, 1, accent),
-
-              // + Button inside nav bar
               GestureDetector(
                 onTap: _toggleMenu,
-                child: Container(
-                  padding: const EdgeInsets.all(12),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: accent,
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: accent.withOpacity(0.4),
-                        blurRadius: 10,
-                        offset: const Offset(0, 3),
+                        color: accent.withOpacity(0.45),
+                        blurRadius: 18,
+                        offset: const Offset(0, 5),
                       ),
                     ],
                   ),
                   child: Icon(
                     _isMenuOpen ? Icons.close_rounded : Icons.add_rounded,
                     color: Colors.white,
-                    size: 28,
+                    size: 34,
                   ),
                 ),
               ),
-
               _buildNavIcon(Icons.settings_rounded, 2, accent),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavIcon(IconData icon, int index, Color accent) {
-    final isSelected = _currentIndex == index;
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _currentIndex = index;
-          _isMenuOpen = false;
-        });
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: isSelected ? accent.withOpacity(0.15) : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Icon(
-          icon,
-          size: 26,
-          color: isSelected ? accent : Colors.grey,
         ),
       ),
     );

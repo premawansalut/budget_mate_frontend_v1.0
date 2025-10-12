@@ -255,7 +255,7 @@ class _IncomeScreenState extends State<IncomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add record'),
+        title: const Text('Add Income'),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [

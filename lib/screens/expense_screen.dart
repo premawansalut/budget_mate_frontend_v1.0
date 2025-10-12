@@ -17,6 +17,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
   TimeOfDay _selectedTime = TimeOfDay.now();
   String _selectedCategory = 'Food';
   bool _isSaving = false;
+  String _type = 'Expenses';
 
   final List<Map<String, dynamic>> categories = [
     {'name': 'Food', 'icon': FontAwesomeIcons.utensils},
@@ -110,6 +111,36 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
             ),
           )
         ],
+      ),
+    );
+  }
+
+  Widget _segmentButton(String label) {
+    final active = _type == label;
+    return GestureDetector(
+      onTap: () => setState(() => _type = label),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+        decoration: BoxDecoration(
+          color: active
+              ? Theme.of(context).colorScheme.secondary
+              : Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(
+            color: active
+                ? Theme.of(context).colorScheme.secondary
+                : Colors.grey.withOpacity(0.3),
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: active
+                ? Colors.white
+                : Theme.of(context).textTheme.bodyLarge?.color,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ),
     );
   }
@@ -227,6 +258,16 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _segmentButton('Expenses'),
+                _segmentButton('Income'),
+                _segmentButton('Loan'),
+              ],
+            ),
+            const SizedBox(height: 22),
             // Amount
             Text('Amount',
                 style: TextStyle(
