@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/settings_provider.dart';
+import '../services/api_service.dart';
+import 'login_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -64,11 +66,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onChanged: (value) => settings.toggleTheme(value),
             ),
 
+
+
             const SizedBox(height: 20),
             const Divider(),
             const SizedBox(height: 10),
 
+            TextButton.icon(
+              onPressed: () async {
+                await ApiService.logoutUser();
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                      (route) => false,
+                );
+              },
+              icon: const Icon(Icons.logout_rounded, color: Colors.redAccent),
+              label: const Text("Logout", style: TextStyle(color: Colors.redAccent)),
+            ),
+
           ],
+
         ),
       ),
     );

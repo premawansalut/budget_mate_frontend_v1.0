@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import 'home_screen.dart';
-import 'statistics_screen.dart';
+import 'statistics/statistics_screen.dart';
 import 'income_screen.dart';
 import 'expense_screen.dart';
 import 'loan_screen.dart';
@@ -132,7 +132,7 @@ class _MainWrapperState extends State<MainWrapper>
     );
   }
 
-  // 🧩 Fixed stacked popup (hit areas aligned correctly)
+  // 🧩 Floating stack menu (animated + fixed hitboxes)
   Widget _buildAnimatedStackMenu(Color accent) {
     final width = MediaQuery.of(context).size.width;
     final centerX = width / 2;
@@ -157,7 +157,7 @@ class _MainWrapperState extends State<MainWrapper>
                     alignment: Alignment.bottomCenter,
                     clipBehavior: Clip.none,
                     children: [
-                      // Loan (lowest)
+                      // Loan
                       Positioned(
                         bottom: 0,
                         child: _buildOptionButton(
@@ -167,7 +167,7 @@ class _MainWrapperState extends State<MainWrapper>
                           onTap: () => _safeNavigate(const LoanScreen()),
                         ),
                       ),
-                      // Expense (middle)
+                      // Expense
                       Positioned(
                         bottom: 80 * value,
                         child: _buildOptionButton(
@@ -177,7 +177,7 @@ class _MainWrapperState extends State<MainWrapper>
                           onTap: () => _safeNavigate(const ExpenseScreen()),
                         ),
                       ),
-                      // Income (top) ✅ hitbox aligned
+                      // Income
                       Positioned(
                         bottom: 160 * value,
                         child: _buildOptionButton(

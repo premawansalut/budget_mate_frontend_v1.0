@@ -470,10 +470,10 @@ class _HomeScreenState extends State<HomeScreen>
   Widget _buildExpenseTab(
       String currencySymbol, Color textColor, Color cardColor, Color accent) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 150),
+      padding: const EdgeInsets.only(bottom: 220),
       child: ListView(
         children: [
-          const SizedBox(height: 10),
+          const SizedBox(height: 20),
           if (isLoading)
             const Center(child: CircularProgressIndicator())
           else if (expenses.isEmpty)
@@ -539,10 +539,10 @@ class _HomeScreenState extends State<HomeScreen>
   Widget _buildIncomeTab(
       String currencySymbol, Color textColor, Color cardColor) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 150),
+      padding: const EdgeInsets.only(bottom: 220),
       child: ListView(
         children: [
-          const SizedBox(height: 10),
+          const SizedBox(height: 20),
           if (isLoading)
             const Center(child: CircularProgressIndicator())
           else if (incomes.isEmpty)

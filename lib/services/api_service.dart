@@ -2,15 +2,16 @@ import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 import '../models/income.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
 
-  static const bool USE_LOCAL_DEVICE = true; // change to false  using emulator
+  static const bool USE_LOCAL_DEVICE = false; // change to false  using emulator
 
   static String get BASE_URL {
     if (USE_LOCAL_DEVICE) {
       //  Physical Android device
-      return 'http://192.168.23.78:3700/api';
+      return 'http://192.168.23.78:3700/api'; // usb -> 10.239.154.78 , wifi -> 192.168.23.78
     } else {
       //  Android emulator
       return 'http://10.0.2.2:3700/api';
@@ -45,6 +46,62 @@ class ApiService {
   // }
 
 
+  // REGISTER USER
+  static Future<Map<String, dynamic>> registerUser(
+      String name, String email, String password) async {
+    final url = Uri.parse("$BASE_URL/auth/register");
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          "name": name,
+          "email": email,
+          "password": password,
+        }),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return {"success": true, "data": data};
+      } else {
+        return {"success": false, "message": data['message'] ?? "Registration failed"};
+      }
+    } catch (e) {
+      return {"success": false, "message": "Error: $e"};
+    }
+  }
+
+  //  LOGIN USER
+  static Future<Map<String, dynamic>> loginUser(String email, String password) async {
+    final uri = Uri.parse('$BASE_URL/auth/login');
+
+    try {
+      final response = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email, 'password': password}),
+      );
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        //Save login state
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('isLoggedIn', true);
+        await prefs.setString('email', email);
+
+        return {'success': true, 'message': data['message'] ?? 'Login success'};
+      } else {
+        return {'success': false, 'message': data['message'] ?? 'Login failed'};
+      }
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+
   static Future<double?> getBalance(int year, int month) async {
     final uri = Uri.parse('$BASE_URL/balance/month_year?year=$year&month=$month');
 
@@ -72,6 +129,14 @@ class ApiService {
       return 0.0;
     }
   }
+
+  //logout
+
+  static Future<void> logoutUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+  }
+
 
   // POST /incomes  (Add new income)
 
@@ -148,6 +213,28 @@ class ApiService {
     print('Backend response: $body');
     return body is Map<String, dynamic> ? body : {};
   }
+
+  //expense stat
+  static Future<Map<String, dynamic>> getExpenseStatistics(
+      int year, int month) async {
+    final uri = Uri.parse('$BASE_URL/expenses/statistics?year=$year&month=$month');
+    try {
+      final response = await http.get(uri, headers: {
+        'Content-Type': 'application/json',
+      });
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        print("Expense statistics API failed: ${response.statusCode}");
+        return {};
+      }
+    } catch (e) {
+      print("Error fetching expense statistics: $e");
+      return {};
+    }
+  }
+
 
   // ADD EXPENSE
   static Future<bool> createExpense(Map<String, dynamic> expenseData) async {

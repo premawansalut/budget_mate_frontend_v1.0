@@ -145,7 +145,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
     );
   }
 
-  // ✅ Save expense with animated popup
+  // Save expense with animated popup
   Future<void> _saveExpense() async {
     final amountText = _amountController.text.trim();
     final amount = double.tryParse(amountText) ?? 0.0;
@@ -206,9 +206,8 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                               borderRadius: BorderRadius.circular(12)),
                         ),
                         onPressed: () {
-                          Navigator.of(context, rootNavigator: true).pop();
-                          Navigator.of(context)
-                              .pushNamedAndRemoveUntil('/', (route) => false);
+                          Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+
                         },
                         child: const Text(
                           'OK',
