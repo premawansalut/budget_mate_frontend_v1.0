@@ -1,148 +1,39 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../services/api_service.dart';
-
-class ExpenseStatScreen extends StatefulWidget {
-  const ExpenseStatScreen({super.key});
-
-  @override
-  State<ExpenseStatScreen> createState() => _ExpenseStatScreenState();
-}
 
 enum ChartView { bar, pie }
 
-class _ExpenseStatScreenState extends State<ExpenseStatScreen> {
-  bool isLoading = false;
-  DateTime selectedDate = DateTime.now();
+class IncomeStatScreen extends StatefulWidget {
+  final List<Map<String, dynamic>> data;
+  final String currency;
+  final String monthLabel;
 
-  double totalExpense = 0;
-  List<Map<String, dynamic>> categorySummary = [];
-  List<Map<String, dynamic>> expenses = [];
-  ChartView _chartView = ChartView.bar;
+  const IncomeStatScreen({
+    super.key,
+    required this.data,
+    required this.currency,
+    required this.monthLabel,
+  });
 
   @override
-  void initState() {
-    super.initState();
-    fetchExpenseStats();
-  }
+  State<IncomeStatScreen> createState() => _IncomeStatScreenState();
+}
 
-  Future<void> fetchExpenseStats() async {
-    setState(() => isLoading = true);
-    try {
-      final res = await ApiService.getExpenseStatistics(
-        selectedDate.year,
-        selectedDate.month,
-      );
-
-      if (res.isNotEmpty) {
-        setState(() {
-          totalExpense =
-              double.tryParse(res['total_expense'].toString()) ?? 0.0;
-          categorySummary = List<Map<String, dynamic>>.from(
-            res['category_summary'] ?? [],
-          );
-          expenses = List<Map<String, dynamic>>.from(res['expenses'] ?? []);
-        });
-      }
-    } catch (e) {
-      debugPrint("Error loading expense stats: $e");
-    } finally {
-      setState(() => isLoading = false);
-    }
-  }
+class _IncomeStatScreenState extends State<IncomeStatScreen> {
+  ChartView _chartView = ChartView.bar;
 
   Color _catColor(String category) {
     switch (category.toLowerCase()) {
-      case 'food':
-        return Colors.redAccent;
-      case 'grocery':
+      case 'salary':
         return Colors.greenAccent;
-      case 'bills':
-        return Colors.orangeAccent;
-      case 'shopping':
-        return Colors.purpleAccent;
-      default:
+      case 'investment':
         return Colors.blueAccent;
+      case 'business':
+        return Colors.orangeAccent;
+      default:
+        return Colors.tealAccent;
     }
-  }
-
-  Future<void> _pickMonthYear() async {
-    int y = selectedDate.year;
-    int m = selectedDate.month;
-
-    await showModalBottomSheet(
-      context: context,
-      backgroundColor: Theme.of(context).cardColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
-      ),
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModal) => SizedBox(
-          height: 300,
-          child: Column(
-            children: [
-              const SizedBox(height: 10),
-              Container(
-                height: 4,
-                width: 40,
-                decoration: BoxDecoration(
-                  color: Colors.grey,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                'Select Month & Year',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).textTheme.bodyLarge?.color,
-                ),
-              ),
-              const SizedBox(height: 15),
-              DropdownButton<int>(
-                value: m,
-                items: List.generate(
-                  12,
-                  (i) => DropdownMenuItem(
-                    value: i + 1,
-                    child: Text(DateFormat.MMMM().format(DateTime(0, i + 1))),
-                  ),
-                ),
-                onChanged: (v) => setModal(() => m = v ?? m),
-              ),
-              DropdownButton<int>(
-                value: y,
-                items: List.generate(10, (i) {
-                  final yy = DateTime.now().year - 5 + i;
-                  return DropdownMenuItem(value: yy, child: Text('$yy'));
-                }),
-                onChanged: (v) => setModal(() => y = v ?? y),
-              ),
-              const Spacer(),
-              ElevatedButton(
-                onPressed: () async {
-                  Navigator.pop(context);
-                  setState(() => selectedDate = DateTime(y, m));
-                  await fetchExpenseStats();
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.secondary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text(
-                  'Apply',
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-              const SizedBox(height: 20),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 
   Widget _buildChartToggle() {
@@ -154,7 +45,10 @@ class _ExpenseStatScreenState extends State<ExpenseStatScreen> {
         borderRadius: BorderRadius.circular(12),
       ),
       child: ToggleButtons(
-        isSelected: [_chartView == ChartView.bar, _chartView == ChartView.pie],
+        isSelected: [
+          _chartView == ChartView.bar,
+          _chartView == ChartView.pie,
+        ],
         onPressed: (index) {
           setState(() {
             _chartView = index == 0 ? ChartView.bar : ChartView.pie;
@@ -187,16 +81,19 @@ class _ExpenseStatScreenState extends State<ExpenseStatScreen> {
     );
   }
 
-  Widget _buildTotalCard(String currency, String monthLabel) {
+  Widget _buildTotalCard(double total) {
     final colors = Theme.of(context).colorScheme;
-    final formattedTotal = NumberFormat('#,##0.00').format(totalExpense);
+    final formattedTotal = NumberFormat('#,##0.00').format(total);
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [colors.error, colors.errorContainer],
+          colors: [
+            colors.primary,
+            colors.primaryContainer,
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -209,45 +106,52 @@ class _ExpenseStatScreenState extends State<ExpenseStatScreen> {
           ),
         ],
       ),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            "Total Expenses",
-            style: TextStyle(
-              color: colors.onPrimary.withOpacity(0.8),
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.2,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            "$currency $formattedTotal",
-            style: TextStyle(
-              color: colors.onPrimary,
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.5,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Icon(
-                Icons.calendar_today_rounded,
-                color: colors.onPrimary.withOpacity(0.8),
-                size: 16,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                monthLabel,
-                style: TextStyle(
-                  color: colors.onPrimary.withOpacity(0.9),
-                  fontWeight: FontWeight.w600,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Total Income",
+                  style: TextStyle(
+                    color: colors.onPrimary.withOpacity(0.8),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.2,
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 8),
+                Text(
+                  "${widget.currency} $formattedTotal",
+                  style: TextStyle(
+                    color: colors.onPrimary,
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.calendar_today_rounded,
+                      color: colors.onPrimary.withOpacity(0.8),
+                      size: 16,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      widget.monthLabel,
+                      style: TextStyle(
+                        color: colors.onPrimary.withOpacity(0.9),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -255,12 +159,12 @@ class _ExpenseStatScreenState extends State<ExpenseStatScreen> {
   }
 
   Widget _buildBarChart() {
-    if (categorySummary.isEmpty) {
-      return const Center(child: Text("No category data"));
+    if (widget.data.isEmpty) {
+      return const Center(child: Text("No income data available"));
     }
 
     return SizedBox(
-      height: 280,
+      height: 300,
       child: BarChart(
         BarChartData(
           borderData: FlBorderData(show: false),
@@ -273,14 +177,14 @@ class _ExpenseStatScreenState extends State<ExpenseStatScreen> {
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 32,
-                getTitlesWidget: (v, meta) {
-                  if (v < 0 || v >= categorySummary.length) {
+                getTitlesWidget: (value, meta) {
+                  if (value < 0 || value >= widget.data.length) {
                     return const SizedBox.shrink();
                   }
                   return Padding(
                     padding: const EdgeInsets.only(top: 8.0),
                     child: Text(
-                      categorySummary[v.toInt()]['category'],
+                      widget.data[value.toInt()]['category'],
                       style: const TextStyle(fontSize: 12),
                     ),
                   );
@@ -288,15 +192,17 @@ class _ExpenseStatScreenState extends State<ExpenseStatScreen> {
               ),
             ),
           ),
-          barGroups: List.generate(categorySummary.length, (i) {
-            final cat = categorySummary[i];
-            final total = double.tryParse(cat['total'].toString()) ?? 0.0;
+          barGroups: List.generate(widget.data.length, (i) {
+            final it = widget.data[i];
+            final total = (it['total'] is num)
+                ? (it['total'] as num).toDouble()
+                : double.tryParse(it['total'].toString()) ?? 0.0;
             return BarChartGroupData(
               x: i,
               barRods: [
                 BarChartRodData(
                   toY: total,
-                  color: _catColor(cat['category']),
+                  color: _catColor(it['category']),
                   width: 22,
                   borderRadius: BorderRadius.circular(6),
                 ),
@@ -309,29 +215,31 @@ class _ExpenseStatScreenState extends State<ExpenseStatScreen> {
   }
 
   Widget _buildPieChart() {
-    if (categorySummary.isEmpty) {
-      return const Center(child: Text("No category data"));
+    if (widget.data.isEmpty) {
+      return const Center(child: Text('No income data available'));
     }
 
     return SizedBox(
-      height: 280,
+      height: 300,
       child: PieChart(
         PieChartData(
           centerSpaceRadius: 40,
-          sections: categorySummary.map((cat) {
-            final total = double.tryParse(cat['total'].toString()) ?? 0.0;
-            final color = _catColor(cat['category']);
+          sections: widget.data.map((it) {
+            final color = _catColor(it['category']);
+            final total = (it['total'] is num)
+                ? (it['total'] as num).toDouble()
+                : double.tryParse(it['total'].toString()) ?? 0.0;
             return PieChartSectionData(
               color: color,
               value: total,
               title:
-                  "${cat['category']}\n${NumberFormat('#,##0.0').format(total)}",
-              titleStyle: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 11,
-              ),
+                  "${it['category']}\n${NumberFormat('#,##0.0').format(total)}",
               radius: 70,
+              titleStyle: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             );
           }).toList(),
         ),
@@ -339,33 +247,33 @@ class _ExpenseStatScreenState extends State<ExpenseStatScreen> {
     );
   }
 
-  Widget _buildExpenseList(String currency) {
-    if (expenses.isEmpty) {
-      return const Center(child: Text("No expenses found"));
+  Widget _buildIncomeList() {
+    if (widget.data.isEmpty) {
+      return const Center(child: Text("No income data available"));
     }
 
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: expenses.length,
+      itemCount: widget.data.length,
       itemBuilder: (context, i) {
-        final exp = expenses[i];
-        final date = DateFormat(
-          'MMM dd, yyyy',
-        ).format(DateTime.parse(exp['created_at']));
+        final item = widget.data[i];
+        final amount = (item['total'] is num)
+            ? (item['total'] as num).toDouble()
+            : double.tryParse(item['total'].toString()) ?? 0.0;
+        final color = _catColor(item['category']);
         return Card(
           margin: const EdgeInsets.symmetric(vertical: 6),
           child: ListTile(
             leading: CircleAvatar(
-              backgroundColor: _catColor(exp['category']).withOpacity(0.2),
-              child: Icon(Icons.category, color: _catColor(exp['category'])),
+              backgroundColor: color.withOpacity(0.2),
+              child: Icon(Icons.trending_up, color: color),
             ),
-            title: Text(exp['category']),
-            subtitle: Text(date),
+            title: Text(item['category']),
             trailing: Text(
-              "-$currency ${NumberFormat('#,##0.00').format(double.parse(exp['amount']))}",
+              "+${widget.currency} ${NumberFormat('#,##0.00').format(amount)}",
               style: const TextStyle(
-                color: Colors.redAccent,
+                color: Colors.greenAccent,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -377,50 +285,54 @@ class _ExpenseStatScreenState extends State<ExpenseStatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final currency = '€'; // or get from your settings provider
-    final monthLabel = DateFormat('MMMM yyyy').format(selectedDate);
+    if (widget.data.isEmpty) {
+      return const Center(child: Text('No income data available'));
+    }
 
-    return Scaffold(
-      body: SafeArea(
-        child: isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildTotalCard(currency, monthLabel),
-                    const SizedBox(height: 24),
-                    _buildChartToggle(),
-                    const SizedBox(height: 20),
-                    AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 250),
-                      transitionBuilder: (child, animation) =>
-                          FadeTransition(opacity: animation, child: child),
-                      child: _chartView == ChartView.bar
-                          ? Padding(
-                              key: const ValueKey('bar'),
-                              padding: const EdgeInsets.only(bottom: 10),
-                              child: _buildBarChart(),
-                            )
-                          : Padding(
-                              key: const ValueKey('pie'),
-                              padding: const EdgeInsets.only(bottom: 10),
-                              child: _buildPieChart(),
-                            ),
-                    ),
-                    const SizedBox(height: 20),
-                    Text(
-                      "Expense Details",
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    _buildExpenseList(currency),
-                  ],
+    final total = widget.data.fold<double>(
+      0,
+      (sum, e) =>
+          sum +
+          ((e['total'] is num)
+              ? (e['total'] as num).toDouble()
+              : double.tryParse(e['total'].toString()) ?? 0.0),
+    );
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildTotalCard(total),
+          const SizedBox(height: 24),
+          _buildChartToggle(),
+          const SizedBox(height: 20),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 250),
+            transitionBuilder: (child, animation) =>
+                FadeTransition(opacity: animation, child: child),
+            child: _chartView == ChartView.bar
+                ? Padding(
+                    key: const ValueKey('bar'),
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: _buildBarChart(),
+                  )
+                : Padding(
+                    key: const ValueKey('pie'),
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: _buildPieChart(),
+                  ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            "Income Details",
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
                 ),
-              ),
+          ),
+          const SizedBox(height: 10),
+          _buildIncomeList(),
+        ],
       ),
     );
   }
