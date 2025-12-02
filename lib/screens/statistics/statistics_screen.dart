@@ -40,10 +40,12 @@ class _StatisticsScreenState extends State<StatisticsScreen>
 
       if (res.isNotEmpty && res['categories'] != null) {
         final parsed = (res['categories'] as List)
-            .map<Map<String, dynamic>>((e) => {
-          'category': e['category'],
-          'total': double.tryParse(e['total'].toString()) ?? 0.0,
-        })
+            .map<Map<String, dynamic>>(
+              (e) => {
+                'category': e['category'],
+                'total': double.tryParse(e['total'].toString()) ?? 0.0,
+              },
+            )
             .toList();
 
         setState(() {
@@ -97,7 +99,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                 value: m,
                 items: List.generate(
                   12,
-                      (i) => DropdownMenuItem(
+                  (i) => DropdownMenuItem(
                     value: i + 1,
                     child: Text(DateFormat.MMMM().format(DateTime(0, i + 1))),
                   ),
@@ -107,13 +109,10 @@ class _StatisticsScreenState extends State<StatisticsScreen>
               const SizedBox(height: 10),
               DropdownButton<int>(
                 value: y,
-                items: List.generate(
-                  10,
-                      (i) {
-                    final yy = DateTime.now().year - 5 + i;
-                    return DropdownMenuItem(value: yy, child: Text('$yy'));
-                  },
-                ),
+                items: List.generate(10, (i) {
+                  final yy = DateTime.now().year - 5 + i;
+                  return DropdownMenuItem(value: yy, child: Text('$yy'));
+                }),
                 onChanged: (v) => setModal(() => y = v ?? y),
               ),
               const Spacer(),
@@ -129,8 +128,10 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                   Navigator.pop(context);
                   await fetchStatistics();
                 },
-                child: const Text('Apply',
-                    style: TextStyle(color: Colors.white, fontSize: 16)),
+                child: const Text(
+                  'Apply',
+                  style: TextStyle(color: Colors.white, fontSize: 16),
+                ),
               ),
               const SizedBox(height: 20),
             ],
@@ -148,7 +149,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Statistics - $monthLabel'),
+        title: Text('Statistics'),
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: Theme.of(context).colorScheme.secondary,
@@ -168,13 +169,17 @@ class _StatisticsScreenState extends State<StatisticsScreen>
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : TabBarView(
-        controller: _tabController,
-        children: [
-          IncomeStatScreen(data: incomeData, currency: currency),
-          ExpenseStatScreen(),
-          LoanStatScreen(data: loanData, currency: currency),
-        ],
-      ),
+              controller: _tabController,
+              children: [
+                IncomeStatScreen(
+                  data: incomeData,
+                  currency: currency,
+                  monthLabel: monthLabel,
+                ),
+                ExpenseStatScreen(),
+                LoanStatScreen(data: loanData, currency: currency),
+              ],
+            ),
     );
   }
 }
