@@ -10,6 +10,8 @@ class ExpenseStatScreen extends StatefulWidget {
   State<ExpenseStatScreen> createState() => _ExpenseStatScreenState();
 }
 
+enum ChartView { bar, pie }
+
 class _ExpenseStatScreenState extends State<ExpenseStatScreen> {
   bool isLoading = false;
   DateTime selectedDate = DateTime.now();
@@ -17,6 +19,7 @@ class _ExpenseStatScreenState extends State<ExpenseStatScreen> {
   double totalExpense = 0;
   List<Map<String, dynamic>> categorySummary = [];
   List<Map<String, dynamic>> expenses = [];
+  ChartView _chartView = ChartView.bar;
 
   @override
   void initState() {
@@ -34,9 +37,11 @@ class _ExpenseStatScreenState extends State<ExpenseStatScreen> {
 
       if (res.isNotEmpty) {
         setState(() {
-          totalExpense = double.tryParse(res['total_expense'].toString()) ?? 0.0;
-          categorySummary =
-          List<Map<String, dynamic>>.from(res['category_summary'] ?? []);
+          totalExpense =
+              double.tryParse(res['total_expense'].toString()) ?? 0.0;
+          categorySummary = List<Map<String, dynamic>>.from(
+            res['category_summary'] ?? [],
+          );
           expenses = List<Map<String, dynamic>>.from(res['expenses'] ?? []);
         });
       }
@@ -82,19 +87,24 @@ class _ExpenseStatScreenState extends State<ExpenseStatScreen> {
                 height: 4,
                 width: 40,
                 decoration: BoxDecoration(
-                    color: Colors.grey, borderRadius: BorderRadius.circular(20)),
+                  color: Colors.grey,
+                  borderRadius: BorderRadius.circular(20),
+                ),
               ),
               const SizedBox(height: 20),
-              Text('Select Month & Year',
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).textTheme.bodyLarge?.color)),
+              Text(
+                'Select Month & Year',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                ),
+              ),
               const SizedBox(height: 15),
               DropdownButton<int>(
                 value: m,
                 items: List.generate(
                   12,
-                      (i) => DropdownMenuItem(
+                  (i) => DropdownMenuItem(
                     value: i + 1,
                     child: Text(DateFormat.MMMM().format(DateTime(0, i + 1))),
                   ),
@@ -119,14 +129,127 @@ class _ExpenseStatScreenState extends State<ExpenseStatScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Theme.of(context).colorScheme.secondary,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-                child: const Text('Apply', style: TextStyle(color: Colors.white)),
+                child: const Text(
+                  'Apply',
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
               const SizedBox(height: 20),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildChartToggle() {
+    final selectedColor = Theme.of(context).colorScheme.primary;
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.35),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: ToggleButtons(
+        isSelected: [_chartView == ChartView.bar, _chartView == ChartView.pie],
+        onPressed: (index) {
+          setState(() {
+            _chartView = index == 0 ? ChartView.bar : ChartView.pie;
+          });
+        },
+        constraints: const BoxConstraints(minHeight: 44, minWidth: 120),
+        borderRadius: BorderRadius.circular(10),
+        selectedBorderColor: selectedColor,
+        borderColor: selectedColor.withOpacity(0.4),
+        fillColor: selectedColor.withOpacity(0.15),
+        children: const [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.bar_chart),
+              SizedBox(width: 8),
+              Text("Bar Chart"),
+            ],
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.pie_chart),
+              SizedBox(width: 8),
+              Text("Pie Chart"),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTotalCard(String currency, String monthLabel) {
+    final colors = Theme.of(context).colorScheme;
+    final formattedTotal = NumberFormat('#,##0.00').format(totalExpense);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [colors.error, colors.errorContainer],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: colors.primary.withOpacity(0.25),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "Total Expenses",
+            style: TextStyle(
+              color: colors.onPrimary.withOpacity(0.8),
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.2,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            "$currency $formattedTotal",
+            style: TextStyle(
+              color: colors.onPrimary,
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Icon(
+                Icons.calendar_today_rounded,
+                color: colors.onPrimary.withOpacity(0.8),
+                size: 16,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                monthLabel,
+                style: TextStyle(
+                  color: colors.onPrimary.withOpacity(0.9),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -144,7 +267,8 @@ class _ExpenseStatScreenState extends State<ExpenseStatScreen> {
           gridData: const FlGridData(show: false),
           titlesData: FlTitlesData(
             leftTitles: const AxisTitles(
-                sideTitles: SideTitles(showTitles: false)),
+              sideTitles: SideTitles(showTitles: false),
+            ),
             bottomTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
@@ -201,9 +325,12 @@ class _ExpenseStatScreenState extends State<ExpenseStatScreen> {
               color: color,
               value: total,
               title:
-              "${cat['category']}\n${NumberFormat('#,##0.0').format(total)}",
+                  "${cat['category']}\n${NumberFormat('#,##0.0').format(total)}",
               titleStyle: const TextStyle(
-                  color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11),
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 11,
+              ),
               radius: 70,
             );
           }).toList(),
@@ -223,8 +350,9 @@ class _ExpenseStatScreenState extends State<ExpenseStatScreen> {
       itemCount: expenses.length,
       itemBuilder: (context, i) {
         final exp = expenses[i];
-        final date =
-        DateFormat('MMM dd, yyyy').format(DateTime.parse(exp['created_at']));
+        final date = DateFormat(
+          'MMM dd, yyyy',
+        ).format(DateTime.parse(exp['created_at']));
         return Card(
           margin: const EdgeInsets.symmetric(vertical: 6),
           child: ListTile(
@@ -237,7 +365,9 @@ class _ExpenseStatScreenState extends State<ExpenseStatScreen> {
             trailing: Text(
               "-$currency ${NumberFormat('#,##0.00').format(double.parse(exp['amount']))}",
               style: const TextStyle(
-                  color: Colors.redAccent, fontWeight: FontWeight.bold),
+                color: Colors.redAccent,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         );
@@ -251,39 +381,46 @@ class _ExpenseStatScreenState extends State<ExpenseStatScreen> {
     final monthLabel = DateFormat('MMMM yyyy').format(selectedDate);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Expense Statistics - $monthLabel"),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.calendar_month),
-            onPressed: _pickMonthYear,
-          ),
-        ],
-      ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("Total Expenses: $currency ${totalExpense.toStringAsFixed(2)}",
-                style: const TextStyle(
-                    fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 20),
-            _buildBarChart(),
-            const SizedBox(height: 30),
-            _buildPieChart(),
-            const SizedBox(height: 30),
-            Text("Expense Details",
-                style: Theme.of(context)
-                    .textTheme
-                    .titleMedium
-                    ?.copyWith(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 10),
-            _buildExpenseList(currency),
-          ],
-        ),
+      body: SafeArea(
+        child: isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildTotalCard(currency, monthLabel),
+                    const SizedBox(height: 24),
+                    _buildChartToggle(),
+                    const SizedBox(height: 20),
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 250),
+                      transitionBuilder: (child, animation) =>
+                          FadeTransition(opacity: animation, child: child),
+                      child: _chartView == ChartView.bar
+                          ? Padding(
+                              key: const ValueKey('bar'),
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: _buildBarChart(),
+                            )
+                          : Padding(
+                              key: const ValueKey('pie'),
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: _buildPieChart(),
+                            ),
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      "Expense Details",
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    _buildExpenseList(currency),
+                  ],
+                ),
+              ),
       ),
     );
   }
