@@ -107,7 +107,7 @@ class _HomeTopSectionState extends State<HomeTopSection> {
                   ],
                 ),
 
-                // Eye Icon + Wallet Illustration
+              
                 Row(
                   children: [
                     IconButton(
