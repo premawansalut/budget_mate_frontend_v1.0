@@ -5,19 +5,22 @@ import '../models/income.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-
-  static const bool USE_LOCAL_DEVICE = false; // change to false  using emulator
+  static const bool USE_LOCAL_BACKEND = false;
 
   static String get BASE_URL {
-    if (USE_LOCAL_DEVICE) {
-      //  Physical Android device
-      return 'http://192.168.23.78:3700/api'; // usb -> 10.239.154.78 , wifi -> 192.168.23.78
-    } else {
-      //  Android emulator
+    // if (USE_LOCAL_DEVICE) {
+    //   //  Physical Android device
+    //   return 'http://192.168.23.78:3700/api'; // usb -> 10.239.154.78 , wifi -> 192.168.23.78
+    // } else {
+    //   //  Android emulator
+    //   return 'http://10.0.2.2:3700/api';
+    // }
+    if (USE_LOCAL_BACKEND) {
       return 'http://10.0.2.2:3700/api';
+    } else {
+      return 'https://budget-mate-backend-92121670304.europe-north1.run.app/api';
     }
   }
-
 
   // Fetch balance for a given year and month
   // static Future<double?> getBalance(int year, int month) async {
@@ -45,21 +48,19 @@ class ApiService {
   //   }
   // }
 
-
   // REGISTER USER
   static Future<Map<String, dynamic>> registerUser(
-      String name, String email, String password) async {
+    String name,
+    String email,
+    String password,
+  ) async {
     final url = Uri.parse("$BASE_URL/auth/register");
 
     try {
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          "name": name,
-          "email": email,
-          "password": password,
-        }),
+        body: jsonEncode({"name": name, "email": email, "password": password}),
       );
 
       final data = jsonDecode(response.body);
@@ -67,7 +68,10 @@ class ApiService {
       if (response.statusCode == 200 || response.statusCode == 201) {
         return {"success": true, "data": data};
       } else {
-        return {"success": false, "message": data['message'] ?? "Registration failed"};
+        return {
+          "success": false,
+          "message": data['message'] ?? "Registration failed",
+        };
       }
     } catch (e) {
       return {"success": false, "message": "Error: $e"};
@@ -75,7 +79,10 @@ class ApiService {
   }
 
   //  LOGIN USER
-  static Future<Map<String, dynamic>> loginUser(String email, String password) async {
+  static Future<Map<String, dynamic>> loginUser(
+    String email,
+    String password,
+  ) async {
     final uri = Uri.parse('$BASE_URL/auth/login');
 
     try {
@@ -91,6 +98,12 @@ class ApiService {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('isLoggedIn', true);
         await prefs.setString('email', email);
+        if (data['user']?['name'] != null) {
+          await prefs.setString('userName', data['user']['name']);
+        }
+        if (data['token'] != null) {
+          await prefs.setString('authToken', data['token']);
+        }
 
         return {'success': true, 'message': data['message'] ?? 'Login success'};
       } else {
@@ -101,14 +114,16 @@ class ApiService {
     }
   }
 
-
   static Future<double?> getBalance(int year, int month) async {
-    final uri = Uri.parse('$BASE_URL/balance/month_year?year=$year&month=$month');
+    final uri = Uri.parse(
+      '$BASE_URL/balance/month_year?year=$year&month=$month',
+    );
 
     try {
-      final response = await http.get(uri, headers: {
-        'Content-Type': 'application/json',
-      });
+      final response = await http.get(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+      );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -136,7 +151,6 @@ class ApiService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
   }
-
 
   // POST /incomes  (Add new income)
 
@@ -188,10 +202,14 @@ class ApiService {
     }
   }
 
-
   static Future<Map<String, dynamic>> getIncome(int year, int month) async {
-    final url = Uri.parse('$BASE_URL/incomes/get_income?year=$year&month=$month');
-    final response = await http.get(url, headers: {'Content-Type': 'application/json'});
+    final url = Uri.parse(
+      '$BASE_URL/incomes/get_income?year=$year&month=$month',
+    );
+    final response = await http.get(
+      url,
+      headers: {'Content-Type': 'application/json'},
+    );
 
     if (response.statusCode != 200) {
       throw Exception('Failed to fetch income');
@@ -199,11 +217,15 @@ class ApiService {
     return jsonDecode(response.body);
   }
 
-
   //statisctics (get)
   static Future<Map<String, dynamic>> getStatistics(int year, int month) async {
-    final url = Uri.parse('$BASE_URL/incomes/statistics?year=$year&month=$month');
-    final response = await http.get(url, headers: {'Content-Type': 'application/json'});
+    final url = Uri.parse(
+      '$BASE_URL/incomes/statistics?year=$year&month=$month',
+    );
+    final response = await http.get(
+      url,
+      headers: {'Content-Type': 'application/json'},
+    );
 
     if (response.statusCode != 200) {
       throw Exception('Failed to load statistics: ${response.statusCode}');
@@ -216,12 +238,17 @@ class ApiService {
 
   //expense stat
   static Future<Map<String, dynamic>> getExpenseStatistics(
-      int year, int month) async {
-    final uri = Uri.parse('$BASE_URL/expenses/statistics?year=$year&month=$month');
+    int year,
+    int month,
+  ) async {
+    final uri = Uri.parse(
+      '$BASE_URL/expenses/statistics?year=$year&month=$month',
+    );
     try {
-      final response = await http.get(uri, headers: {
-        'Content-Type': 'application/json',
-      });
+      final response = await http.get(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+      );
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
@@ -234,7 +261,6 @@ class ApiService {
       return {};
     }
   }
-
 
   // ADD EXPENSE
   static Future<bool> createExpense(Map<String, dynamic> expenseData) async {
@@ -254,11 +280,15 @@ class ApiService {
     }
   }
 
-
   //get expenses for a given year and month
   static Future<double?> getTotalExpenses(int year, int month) async {
-    final url = Uri.parse('$BASE_URL/expenses/total_expenses?year=$year&month=$month');
-    final response = await http.get(url, headers: {'Content-Type': 'application/json'});
+    final url = Uri.parse(
+      '$BASE_URL/expenses/total_expenses?year=$year&month=$month',
+    );
+    final response = await http.get(
+      url,
+      headers: {'Content-Type': 'application/json'},
+    );
 
     if (response.statusCode == 200) {
       final body = jsonDecode(response.body);
@@ -270,10 +300,15 @@ class ApiService {
     }
   }
 
-// show recent expenses in home screen
+  // show recent expenses in home screen
   static Future<Map<String, dynamic>> getExpenses(int year, int month) async {
-    final url = Uri.parse('$BASE_URL/expenses/get_expenses?year=$year&month=$month');
-    final response = await http.get(url, headers: {'Content-Type': 'application/json'});
+    final url = Uri.parse(
+      '$BASE_URL/expenses/get_expenses?year=$year&month=$month',
+    );
+    final response = await http.get(
+      url,
+      headers: {'Content-Type': 'application/json'},
+    );
 
     if (response.statusCode != 200) {
       throw Exception('Failed to load expenses');
@@ -289,23 +324,27 @@ class ApiService {
     };
   }
 
-
-  static Future<bool> updateExpense(String id, double amount, String note) async {
+  static Future<bool> updateExpense(
+    String id,
+    double amount,
+    String note,
+  ) async {
     final url = Uri.parse('$BASE_URL/expenses/$id');
     final body = jsonEncode({"amount": amount, "note": note});
-    final response = await http.put(url,
-        headers: {'Content-Type': 'application/json'}, body: body);
+    final response = await http.put(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: body,
+    );
     return response.statusCode == 200;
   }
 
   static Future<bool> deleteExpense(String id) async {
     final url = Uri.parse('$BASE_URL/expenses/$id');
-    final response = await http.delete(url, headers: {'Content-Type': 'application/json'});
+    final response = await http.delete(
+      url,
+      headers: {'Content-Type': 'application/json'},
+    );
     return response.statusCode == 200;
   }
-
-
-
-
-
 }
