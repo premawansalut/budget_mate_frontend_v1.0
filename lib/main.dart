@@ -21,7 +21,7 @@ void main() async {
 class BudgetMateApp extends StatelessWidget {
   const BudgetMateApp({super.key});
 
-  // ✅ Check if user is already logged in
+
   Future<bool> _checkLoginStatus() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool('isLoggedIn') ?? false;
@@ -54,11 +54,11 @@ class BudgetMateApp extends StatelessWidget {
         ),
       ),
 
-      // ✅ Automatically decide whether to show Login or MainWrapper
+   
       home: FutureBuilder<bool>(
         future: _checkLoginStatus(),
         builder: (context, snapshot) {
-          // Show loading indicator while checking login status
+          // check login status
           if (!snapshot.hasData) {
             return const Scaffold(
               body: Center(
@@ -67,7 +67,7 @@ class BudgetMateApp extends StatelessWidget {
             );
           }
 
-          // If logged in → go to MainWrapper, else → LoginScreen
+
           if (snapshot.data == true) {
             return const MainWrapper();
           } else {
